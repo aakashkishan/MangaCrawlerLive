@@ -60,16 +60,24 @@ public class MangaSeriesService {
         try {
             mangaSeries = setMangaSeriesToBeDownloaded(mangaSeriesUrl, mangaSeriesName);
         } catch (DaoException daoex) {
-            daoex.printStackTrace();
+            System.out.println("DaoException!");
         }
 
         // Create a separate database for the MangaSeries
-        String mangaDatabaseName = String.join("_", mangaSeriesName.toLowerCase().split(" "));
+        String[] databaseStrs = mangaSeriesName.toLowerCase().split(" ");
+        StringBuilder sb = new StringBuilder();
+        int index = 0;
+        while(index < databaseStrs.length - 1) {
+            sb.append(databaseStrs[index]).append("_");
+        }
+        sb.append(databaseStrs[index]);
+        String mangaDatabaseName = sb.toString();
+
         try {
             createTableForMangaSeries(mangaDatabaseName);
             mangaSeries = updateDatabaseNameForMangaSeries(mangaSeries.getId(), mangaDatabaseName);
         } catch (DaoException daoex) {
-            daoex.printStackTrace();
+            System.out.println("DaoException!");
         }
 
         // Create a directory for the Manga Series
@@ -79,6 +87,5 @@ public class MangaSeriesService {
 
         return mangaSeries;
     }
-
 
 }

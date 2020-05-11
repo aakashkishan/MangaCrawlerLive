@@ -11,9 +11,24 @@ import java.util.List;
 
 public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatusEnum, MangaChapter, MangaChapterStatusEnum> {
 
+    private Connection getConnection(String url, String username, String password) {
+        Connection connection = null;
+        try {
+            Class.forName(SqlConnectionConst.DRIVER);
+            connection = DriverManager.getConnection(url, username, password);
+
+        } catch (ClassNotFoundException e) {
+            System.out.println("ClassNotFoundException:" + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println("SQLException:" + e.getMessage());
+        }
+
+        return connection;
+    }
+
     @Override
     public MangaSeries insertMangaSeries(MangaSeries mangaSeries) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
              PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.INSERT_MANGA_SERIES);) {
             preparedStatement.setString(1, mangaSeries.getId());
             preparedStatement.setString(2, mangaSeries.getMangaUrl());
@@ -23,14 +38,14 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             preparedStatement.executeUpdate();
             return findMangaSeriesById(mangaSeries.getId());
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public MangaSeries findMangaSeriesById(String id) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_SERIES);) {
             preparedStatement.setString(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -45,53 +60,52 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             }
             return mangaSeries;
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public void createTableForMangaSeries(String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.CREATE_MANGA_SERIES_DATABASE);) {
-            preparedStatement.setString(1, databaseName);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateCreateChapterTableQuery(databaseName));) {
             preparedStatement.executeUpdate();
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public MangaSeries updateDatabaseNameForMangaSeries(String id, String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.UPDATE_MANGA_SERIES_DATABASE_NAME);) {
             preparedStatement.setString(1, databaseName);
             preparedStatement.setString(2, id);
             preparedStatement.executeUpdate();
             return findMangaSeriesById(id);
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public int updateMangaSeriesStatusByMangaName(MangaSeriesStatusEnum seriesStatus, String mangaName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.UPDATE_MANGA_SERIES_STATUS_BY_NAME);) {
             preparedStatement.setString(1, seriesStatus.toString());
             preparedStatement.setString(2, mangaName);
             return preparedStatement.executeUpdate();
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public List<MangaSeries> findMangaSeriesByStatus(MangaSeriesStatusEnum mangaStatus) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_SERIES_TO_BE_DOWNLOADED);) {
             preparedStatement.setString(1, mangaStatus.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -108,16 +122,15 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             }
             return listOfMangas;
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public List<String> findAllMangaChaptersDownloaded(String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_ALL_MANGA_CHAPTERS_DOWNLOADED);) {
-            preparedStatement.setString(1, databaseName);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateFindAllMangaChaptersDownloaded(databaseName));) {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             List<String> listOfChapters = new ArrayList<>();
@@ -126,35 +139,33 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             }
             return listOfChapters;
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public MangaChapter insertMangaChapter(MangaChapter mangaChapter, String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.INSERT_MANGA_CHAPTER);) {
-            preparedStatement.setString(1, databaseName);
-            preparedStatement.setString(2, mangaChapter.getId());
-            preparedStatement.setString(3, mangaChapter.getChapterNumber());
-            preparedStatement.setString(4, mangaChapter.getChapterUrl());
-            preparedStatement.setString(5, mangaChapter.getStatus().toString());
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateInsertMangaChapter(databaseName));) {
+            preparedStatement.setString(1, mangaChapter.getId());
+            preparedStatement.setString(2, mangaChapter.getChapterNumber());
+            preparedStatement.setString(3, mangaChapter.getChapterUrl());
+            preparedStatement.setString(4, mangaChapter.getStatus().toString());
             preparedStatement.executeUpdate();
 
             return findMangaChapterById(mangaChapter.getId(), databaseName);
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public MangaChapter findMangaChapterById(String id, String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_CHAPTER_BY_ID);) {
-            preparedStatement.setString(1, databaseName);
-            preparedStatement.setString(2, id);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateFindMangaChapterById(databaseName));) {
+            preparedStatement.setString(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             MangaChapter mangaChapter = new MangaChapter();
@@ -166,17 +177,16 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             }
             return mangaChapter;
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public List<MangaChapter> findMangaChapterByStatus(MangaChapterStatusEnum chapterStatus, String databaseName) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_CHAPTER_BY_STATUS);) {
-            preparedStatement.setString(1, databaseName);
-            preparedStatement.setString(2, chapterStatus.toString());
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateFindMangaChapterByStatus(databaseName));) {
+            preparedStatement.setString(1, chapterStatus.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
 
             List<MangaChapter> listOfChapters = new ArrayList<>();
@@ -190,21 +200,20 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
             }
             return listOfChapters;
         } catch (SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }
 
     @Override
     public int updateMangaChapterStatus(String databaseName, MangaChapterStatusEnum mangaStatus, String id) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.UPDATE_MANGA_CHAPTER_STATUS);) {
-            preparedStatement.setString(1, databaseName);
-            preparedStatement.setString(2, mangaStatus.toString());
-            preparedStatement.setString(3, id);
+        try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
+            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.generateUpdateMangaChapter(databaseName));) {
+            preparedStatement.setString(1, mangaStatus.toString());
+            preparedStatement.setString(2, id);
             return preparedStatement.executeUpdate();
         } catch(SQLException sqlex) {
-            sqlex.printStackTrace();
+            System.out.println(sqlex.getMessage());
             throw sqlex;
         }
     }

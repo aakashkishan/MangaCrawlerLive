@@ -15,7 +15,7 @@ public class DirectoryFilePathUtils {
     }
 
     public static String generatePDFPathForMangaChapterInMangaSeries(String chapterNumber, String mangaName) {
-        return String.format("./%s/Chapter %s/Chapter %s.pdf", mangaName, chapterNumber);
+        return String.format("./%s/Chapter %s/Chapter %s.pdf", mangaName, chapterNumber, chapterNumber);
     }
 
 }

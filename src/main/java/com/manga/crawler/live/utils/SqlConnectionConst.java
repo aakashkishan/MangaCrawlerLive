@@ -11,4 +11,6 @@ public class SqlConnectionConst {
 
     public final static String PASSWORD = "password";
 
+    public final static String DRIVER = "com.mysql.jdbc.Driver";
+
 }
