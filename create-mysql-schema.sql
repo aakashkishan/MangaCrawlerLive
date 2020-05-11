@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS manga_list (
     Manga_Name    NVARCHAR(64) NOT NULL,
     Status        NVARCHAR(64) NOT NULL,
     Database_Name NVARCHAR(64),
-    PRIMARY KEY (Id)
+    PRIMARY KEY (Id),
+    UNIQUE KEY `uc_manga_series` (`Manga_Name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class MangaChapter {
 
-    private String Id;
+    private String id;
 
     private String chapterNumber;
 

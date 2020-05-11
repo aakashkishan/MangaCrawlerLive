@@ -10,7 +10,13 @@ public class ExceptionUtils {
 
     public final static String DAO_EXCEPTION_MANGA_SERIES_BY_ID = "could not perform the SQL transaction for manga_series={%s}";
 
+    public final static String DAO_EXCEPTION_MANGA_SERIES_BY_STATUS = "could not perform the SQL transaction for manga_status={%s}";
+
+    public final static String DAO_EXCEPTION_MANGA_SERIES_BY_NAME = "could not perform the SQL transaction for manga_name={%s}";
+
     public final static String DAO_EXCEPTION_MANGA_CHAPTER_BY_ID = "could not perform the SQL transaction for manga_chapter={%s}";
+
+    public final static String DAO_EXCEPTION_MANGA_CHAPTER_BY_STATUS = "could not perform the SQL transaction for manga_chapter={%s}";
 
     public final static String PARAM_VALIDATION_MESSAGE = "Input parameter is null/blank!";
 
@@ -22,6 +28,22 @@ public class ExceptionUtils {
 
     public static void throwDaoExceptionForMangaChapterById(String id, Exception ex) {
         throw new DaoException(String.format(DAO_EXCEPTION_MANGA_CHAPTER_BY_ID, id), ex);
+    }
+
+    public static void throwDaoExceptionForMangaSeriesByStatus(MangaSeriesStatusEnum status, Exception ex) {
+        throw new DaoException(String.format(DAO_EXCEPTION_MANGA_SERIES_BY_STATUS, status.toString()), ex);
+    }
+
+    public static void throwDaoExceptionForMangaChapterByStatus(MangaChapterStatusEnum status, Exception ex) {
+        throw new DaoException(String.format(DAO_EXCEPTION_MANGA_CHAPTER_BY_STATUS, status), ex);
+    }
+
+    public static void throwDaoExceptionForMangaSeriesByMangaName(String mangaName, Exception ex) {
+        throw new DaoException(String.format(DAO_EXCEPTION_MANGA_SERIES_BY_NAME, mangaName), ex);
+    }
+
+    public static void throwDaoException(Exception ex) {
+        throw new DaoException(String.format(DAO_EXCEPTION_MESSAGE), ex);
     }
 
     public static void throwParamValidationExceptionIfNull(String paramName, Object param) {
