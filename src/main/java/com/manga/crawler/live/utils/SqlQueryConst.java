@@ -30,7 +30,7 @@ public class SqlQueryConst {
 
   public final static String FIND_MANGA_SERIES = "SELECT Id, Manga_Url, Manga_Name, Status, Database_Name FROM manga_list WHERE Id = ?";
 
-  public final static String FIND_MANGA_SERIES_TO_BE_DOWNLOADED = "SELECT Id, Manga_Url, Manga_Name, Status, Database_Name FROM manga_list WHERE Status = ?";
+  public final static String FIND_MANGA_SERIES_BY_STATUS = "SELECT Id, Manga_Url, Manga_Name, Status, Database_Name FROM manga_list WHERE Status = ?";
 
   @Deprecated
   public final static String FIND_ALL_MANGA_CHAPTERS_DOWNLOADED = "SELECT Chapter_Number FROM ?";

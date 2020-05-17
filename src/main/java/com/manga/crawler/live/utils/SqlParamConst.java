@@ -16,4 +16,6 @@ public class SqlParamConst {
 
     public final static String DATABASE_NAME = "Database_Name";
 
+    public final static String LIST_OF_CHAPTERS = "List_Of_Chapters";
+
 }

@@ -3,14 +3,9 @@ package com.manga.crawler.live.service;
 import com.manga.crawler.live.exceptions.DaoException;
 import com.manga.crawler.live.model.MangaSeries;
 import com.manga.crawler.live.repository.IMangaDao;
-import com.manga.crawler.live.utils.DirectoryFilePathUtils;
-import com.manga.crawler.live.utils.ExceptionUtils;
-import com.manga.crawler.live.utils.MangaSeriesStatusEnum;
-import com.manga.crawler.live.utils.ParamsConst;
+import com.manga.crawler.live.utils.*;
 
 import java.io.File;
-import java.sql.SQLException;
-import java.util.UUID;
 
 public class MangaSeriesService {
 
@@ -18,47 +13,18 @@ public class MangaSeriesService {
 
     public MangaSeriesService(IMangaDao mangaDao) {
         this.mangaDao = mangaDao;
-    }
-
-    public MangaSeries setMangaSeriesToBeDownloaded(String mangaSeriesUrl, String mangaSeriesName) throws DaoException {
-        // Set these MangaSeries related params to the Database
-        MangaSeries mangaSeries = new MangaSeries();
-        mangaSeries.setId(UUID.randomUUID().toString());
-        mangaSeries.setMangaUrl(mangaSeriesUrl);
-        mangaSeries.setMangaName(mangaSeriesName);
-        mangaSeries.setStatus(MangaSeriesStatusEnum.ACTIVE);
-        try {
-            return (MangaSeries) mangaDao.insertMangaSeries(mangaSeries);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaSeriesById(mangaSeries.getId(), sqlex);
-            return null;
-        }
-    }
-
-    public void createTableForMangaSeries(String mangaDatabaseName) throws DaoException {
-        try {
-            mangaDao.createTableForMangaSeries(mangaDatabaseName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaSeriesById(mangaDatabaseName, sqlex);
-        }
-    }
-
-    public MangaSeries updateDatabaseNameForMangaSeries(String id, String databaseName) throws DaoException {
-        try {
-            return (MangaSeries) mangaDao.updateDatabaseNameForMangaSeries(id, databaseName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaSeriesById(id, sqlex);
-            return null;
-        }
+        new DaoUtils(this.mangaDao);
     }
 
     public MangaSeries setMangaSeriesForDownload(String mangaSeriesUrl, String mangaSeriesName) throws DaoException {
+
+        System.out.println("Manga Series Service Starting!");
         // Insert the MangaSeries record and get it for further processing
         ExceptionUtils.throwParamValidationExceptionIfBlank(ParamsConst.MANGA_URL, mangaSeriesUrl);
         ExceptionUtils.throwParamValidationExceptionIfBlank(ParamsConst.MANGA_NAME, mangaSeriesName);
         MangaSeries mangaSeries = null;
         try {
-            mangaSeries = setMangaSeriesToBeDownloaded(mangaSeriesUrl, mangaSeriesName);
+            mangaSeries = DaoUtils.setMangaSeriesToBeDownloaded(mangaSeriesUrl, mangaSeriesName);
         } catch (DaoException daoex) {
             System.out.println("DaoException!");
         }
@@ -74,8 +40,8 @@ public class MangaSeriesService {
         String mangaDatabaseName = sb.toString();
 
         try {
-            createTableForMangaSeries(mangaDatabaseName);
-            mangaSeries = updateDatabaseNameForMangaSeries(mangaSeries.getId(), mangaDatabaseName);
+            DaoUtils.createTableForMangaSeries(mangaDatabaseName);
+            mangaSeries = DaoUtils.updateDatabaseNameForMangaSeries(mangaSeries.getId(), mangaDatabaseName);
         } catch (DaoException daoex) {
             System.out.println("DaoException!");
         }

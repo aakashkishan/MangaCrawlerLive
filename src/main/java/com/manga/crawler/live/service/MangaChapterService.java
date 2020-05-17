@@ -6,6 +6,7 @@ import com.manga.crawler.live.model.MangaChapter;
 import com.manga.crawler.live.model.MangaSeries;
 import com.manga.crawler.live.repository.IMangaDao;
 import com.manga.crawler.live.utils.*;
+import lombok.SneakyThrows;
 import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,100 +15,25 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.jsoup.Jsoup.connect;
 
-public class MangaChapterService {
+public class MangaChapterService extends TimerTask {
 
     private IMangaDao mangaDao;
 
     public MangaChapterService(IMangaDao mangaDao) {
         this.mangaDao = mangaDao;
+        new DaoUtils(this.mangaDao);
     }
 
-    public List<MangaSeries> findMangaSeriesToBeDownloaded(MangaSeriesStatusEnum mangaStatus) throws DaoException {
-        try {
-            return mangaDao.findMangaSeriesByStatus(mangaStatus);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaSeriesByStatus(mangaStatus, sqlex);
-            return null;
-        }
-    }
-
-    public List<String> findTheDownloadedMangaChaptersOfMangaSeries(String databaseName) throws DaoException {
-        try {
-            return mangaDao.findAllMangaChaptersDownloaded(databaseName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoException(sqlex);
-            return null;
-        }
-    }
-
-    public List<String> getAllChaptersOfMangaSeries(MangaSeries mangaSeries) throws IOException {
-        List<String> allChapters = new ArrayList<>();
-        Document doc = connect(mangaSeries.getMangaUrl()).get();
-        Element mangaChaptersTable = doc.getElementById(WebScrapeConst.MANGA_CHAPTERS_CLASS);
-        Elements mangaChapters = mangaChaptersTable.select(WebScrapeConst.ANCHOR_TAG);
-        for(Element mangaChapter: mangaChapters) {
-            allChapters.add(String.format("%s%s", WebScrapeConst.BASE_URL, mangaChapter.attr(WebScrapeConst.HREF_ATTRIBUTE)));
-        }
-        return allChapters;
-    }
-
-    public List<String> getYetToBeDownloadedChapterNumbers(List<String> allChapters, List<String> downloadedChapterNumbers) {
-        List<String> toBeDownloadedChapterNumbers = new ArrayList<>();
-        for(String webChapterNumber: allChapters) {
-            boolean isFound = false;
-            for(String downloadedChapterNumber: downloadedChapterNumbers) {
-                if(webChapterNumber == downloadedChapterNumber) {
-                    isFound = true;
-                }
-            }
-            if(isFound == false) {
-                toBeDownloadedChapterNumbers.add(webChapterNumber);
-            }
-        }
-        return toBeDownloadedChapterNumbers;
-    }
-
-    public MangaChapter insertChapterForMangaSeries(MangaChapter mangaChapter, String databaseName) throws DaoException {
-        try {
-            return (MangaChapter) mangaDao.insertMangaChapter(mangaChapter, databaseName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaChapterById(mangaChapter.getId(), sqlex);
-            return null;
-        }
-    }
-
-    public List<MangaChapter> findMangaChaptersToBeDownloaded(MangaChapterStatusEnum chapterStatus, String databaseName) {
-        try {
-            return mangaDao.findMangaChapterByStatus(chapterStatus, databaseName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaChapterByStatus(chapterStatus, sqlex);
-            return null;
-        }
-    }
-
-    public int updateMangaChapterStatus(String databaseName, MangaChapterStatusEnum mangaStatus, String id) throws DaoException {
-        try {
-            return mangaDao.updateMangaChapterStatus(databaseName, mangaStatus, id);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaChapterByStatus(mangaStatus, sqlex);
-            return -1;
-        }
-    }
-
-    public int updateMangaSeriesStatusByMangaName(MangaSeriesStatusEnum seriesStatus, String mangaName) throws DaoException {
-        try {
-            return mangaDao.updateMangaSeriesStatusByMangaName(seriesStatus, mangaName);
-        } catch (SQLException sqlex) {
-            ExceptionUtils.throwDaoExceptionForMangaSeriesByMangaName(mangaName, sqlex);
-            return -1;
-        }
+    @SneakyThrows
+    @Override
+    public void run() {
+        mangaChapterService();
     }
 
     public void downloadMangaChapters(List<MangaChapter> listOfChaptersToBeDownloaded, String databaseName, String mangaName) throws IOException, DocumentException, DaoException {
@@ -161,7 +87,7 @@ public class MangaChapterService {
 
             // Set the Status of the Chapter to DISABLED once it is downloaded
             try {
-                updateMangaChapterStatus(databaseName, MangaChapterStatusEnum.DISABLED, mangaChapter.getId());
+                DaoUtils.updateMangaChapterStatus(databaseName, MangaChapterStatusEnum.DISABLED, mangaChapter.getId());
             } catch (DaoException daoex) {
                 System.out.println("DaoException!");
             }
@@ -169,16 +95,18 @@ public class MangaChapterService {
 
         // Set the Status of the Manga Series to DISABLED once all chapters are downloaded
         try {
-            updateMangaSeriesStatusByMangaName(MangaSeriesStatusEnum.DISABLED, mangaName);
+            DaoUtils.updateMangaSeriesStatusByMangaName(MangaSeriesStatusEnum.DISABLED, mangaName);
         } catch (DaoException daoex) {
             System.out.println("DaoException!");
         }
     }
 
     public void mangaChapterService() throws IOException, DaoException {
+
+        System.out.println("Manga Chapter Service Starting!");
         List<MangaSeries> listOfMangas = null;
         try {
-            listOfMangas = findMangaSeriesToBeDownloaded(MangaSeriesStatusEnum.ACTIVE);
+            listOfMangas = DaoUtils.findMangaSeriesByStatus(MangaSeriesStatusEnum.ACTIVE);
         } catch (DaoException daoex) {
             System.out.println("DaoException!");
         }
@@ -187,13 +115,13 @@ public class MangaChapterService {
             // Get the already downloaded chapters for the manga-series
             List<String> downloadedChapterNumbers = new ArrayList<>();
             try {
-                downloadedChapterNumbers = findTheDownloadedMangaChaptersOfMangaSeries(mangaSeries.getDatabaseName());
+                downloadedChapterNumbers = DaoUtils.findTheDownloadedMangaChaptersOfMangaSeries(mangaSeries.getDatabaseName());
             } catch (DaoException daoex) {
                 System.out.println("DaoException!");
             }
 
             // Get all chapters for the manga series
-            List<String> allChapterUrls = getAllChaptersOfMangaSeries(mangaSeries);
+            List<String> allChapterUrls = DaoUtils.getAllChaptersOfMangaSeries(mangaSeries);
             Map<String, String> allChapterMap = new HashMap<>();
             // Process the data to obtain a list of chapter numbers
             Pattern p = Pattern.compile("(\\d+)(?!.*\\d)");
@@ -206,7 +134,7 @@ public class MangaChapterService {
                 }
             }
 
-            List<String> toBeDownloadedChapterNumbers = getYetToBeDownloadedChapterNumbers(allChapters, downloadedChapterNumbers);
+            List<String> toBeDownloadedChapterNumbers = DaoUtils.getYetToBeDownloadedChapterNumbers(allChapters, downloadedChapterNumbers);
             for(String toBeDownloadedChapterNumber: toBeDownloadedChapterNumbers) {
                 MangaChapter mangaChapter = new MangaChapter();
                 mangaChapter.setId(UUID.randomUUID().toString());
@@ -214,7 +142,7 @@ public class MangaChapterService {
                 mangaChapter.setChapterUrl(allChapterMap.get(toBeDownloadedChapterNumber));
                 mangaChapter.setStatus(MangaChapterStatusEnum.ACTIVE);
                 try {
-                    mangaChapter = insertChapterForMangaSeries(mangaChapter, mangaSeries.getDatabaseName());
+                    mangaChapter = DaoUtils.insertChapterForMangaSeries(mangaChapter, mangaSeries.getDatabaseName());
                     System.out.println(mangaChapter);
                 } catch (DaoException daoex) {
                     System.out.println("DaoException!");
@@ -223,7 +151,7 @@ public class MangaChapterService {
 
             List<MangaChapter> yetToBeDownloadedChapters = new ArrayList<>();
             try {
-                yetToBeDownloadedChapters = findMangaChaptersToBeDownloaded(MangaChapterStatusEnum.ACTIVE, mangaSeries.getDatabaseName());
+                yetToBeDownloadedChapters = DaoUtils.findMangaChaptersToBeDownloaded(MangaChapterStatusEnum.ACTIVE, mangaSeries.getDatabaseName());
                 System.out.println("YetToBeDownloaded:" + yetToBeDownloadedChapters);
             } catch (DaoException daoex) {
                 System.out.println("DaoException!");

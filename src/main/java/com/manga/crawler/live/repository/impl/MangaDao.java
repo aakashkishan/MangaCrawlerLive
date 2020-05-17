@@ -106,7 +106,7 @@ public class MangaDao implements IMangaDao<String, MangaSeries, MangaSeriesStatu
     @Override
     public List<MangaSeries> findMangaSeriesByStatus(MangaSeriesStatusEnum mangaStatus) throws SQLException {
         try (Connection conn = getConnection(SqlConnectionConst.URL, SqlConnectionConst.USERNAME, SqlConnectionConst.PASSWORD);
-            PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_SERIES_TO_BE_DOWNLOADED);) {
+             PreparedStatement preparedStatement = conn.prepareStatement(SqlQueryConst.FIND_MANGA_SERIES_BY_STATUS);) {
             preparedStatement.setString(1, mangaStatus.toString());
             ResultSet resultSet = preparedStatement.executeQuery();
 
